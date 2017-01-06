@@ -4,6 +4,8 @@ This is a test text file. I will use it to write down notes.
 (Git) Commands:
 git config --global user.name "Manuel von Krosigk"
 git config --global user.email "m.vkrosigk@web.de"
+git checkout -b manuel_changes creates and switches to a new branch
+
 touch <filename.filetype> creates a new file
 vim <filename.tiletype> lets me change the file in a text editor; start writing with "i", exit and save by "esc",":x"
 git status checks the status
@@ -14,7 +16,7 @@ git log gives you the changes that happened so far to a file
 git push -u origin master says where it is pushed to, -u etc will be stored so push sufficient in later uploads (username & PW)
 git remote add origin https://github.com/.../... in case master has still to be identified (enter PW)
 touch .gitignore creates gitignore file
-git rm --cached <filename.filetype> unlists from git not ignore list if file created before the .gitignore setup
-
 git pull -u origin master (-u can be left out) will pull all contents of current repo
+
+git rm --cached <filename.filetype> unlists from git not ignore list if file created before the .gitignore setup
 rm .git/index.lock if something went wrong and the file must be removed manually
