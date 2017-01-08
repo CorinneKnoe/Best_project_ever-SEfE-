@@ -1,0 +1,43 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%  knitr document Knüpfel, Krosigk
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%
+% Preamble
+%%
+\documentclass[10pt]{article}
+
+\usepackage{times}
+\usepackage{amssymb}
+\usepackage{amsmath}
+\usepackage{latexsym}
+\usepackage{stmaryrd}
+\usepackage{soul}
+\usepackage{booktabs}
+
+%%
+% Document
+%%
+\begin{document} 
+
+\author{Corinne Kn\"upfel and Manuel von Krosigk}
+
+\title{Forecasting excess returns of S\&P 500 using ARIMA models}
+
+\date{\today}
+
+\maketitle
+
+\titlepage
+
+%%
+% Body
+%%
+
+% \Sexpr{} for integrating the result into the file
+% <<>>=
+% @
+% for an environment
+
+\end{document}
+
