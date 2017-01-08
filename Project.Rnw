@@ -1,5 +1,5 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%  knitr document Knüpfel, Krosigk
+%%  knitr document Knöpfel, Krosigk
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %%
@@ -20,7 +20,7 @@
 %%
 \begin{document} 
 
-\author{Corinne Kn\"upfel and Manuel von Krosigk}
+\author{Corinne Kn\"opfel and Manuel von Krosigk}
 
 \title{Forecasting excess returns of S\&P 500 using ARIMA models}
 
