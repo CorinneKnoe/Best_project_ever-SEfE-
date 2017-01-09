@@ -10,6 +10,7 @@
 \usepackage{times}
 \usepackage{amssymb}
 \usepackage{amsmath}
+\usepackage[hidelinks,bookmarksnumbered]{hyperref}
 \usepackage{latexsym}
 \usepackage{stmaryrd}
 \usepackage{soul}
@@ -38,5 +39,56 @@
 % <<>>=
 % @
 % for an environment
+
+\section{Introduction}
+
+Whether it is possible to forecast excess returns is one of the key indicators for the efficiency of capital markets. Particularly in times of automated high frequency trading, it should not be possible to being able to generate a consistently positive return, using only historical information. 
+
+Since homogenous expectations and further efficiency criteria are minimal requirements for the most popular financial models, such as Fama's and French's Capital Asset Pricing Model, we aspire to determine whether it is possible to outperform the market on a daily basis using only publicly available data and standard econometric tool which we assume to be common knowledge within the investing society.
+
+\section{Data}
+
+As an approximation for the market, we utilize the S\&P500 from December, 31st 1999 until September, 30th 2016. The risk free rate is taken from the Kenneth French data library.
+%(http://mba.tuck.dartmouth.edu/pages/faculty/ken.french/data_library.html)
+Since some of the values for the risk free rate are not available for the respective dates of the S\&P500, we approximate them by the most recet preceding value of the risk free rate.
+For the predictive model we include different factors taken from the St. Louisfiel Federal Reserve Bank.
+%(https://fred.stlouisfed.org/series/)
+%
+\begin{figure}[h]
+    	\centering
+<<echo=FALSE, fig.width=3, fig.height=3>>=
+###
+# Read in data and adjust for later analysis
+###
+
+# first read given data and adjust
+data_given                <- read.csv(file="data/SandP_data.csv", header=TRUE, sep=";")
+Date                      <- as.Date(data_given[,1]) 
+
+# check whether all NA values in 'Date' are in the end of the vector 
+# sum(1:length(which(!is.na(Date)))==which(!is.na(Date)))==length(which(!is.na(Date)))
+# truncate vectors to all values that we actually observed
+Date                      <- Date[1:length(which(!is.na(Date)))]
+# calculate daily returns from S&P index in percent
+SandP                     <- (data_given[2:length(Date),2]/data_given[1:length(Date)-1,2]-1)*100
+# calculate daily riskfree rate from annulaized riskfree in percent, discard first observation
+riskfree                  <- data_given[2:length(Date),3]/365
+# sum(is.na(riskfree)) # some values in the risk free rate are NA
+# replace them with the last value that is not NA
+for(i in 1:length(riskfree)){
+  if(is.na(riskfree[i])==T){
+    riskfree[i]               <- riskfree[i-1]
+  }
+} 
+# calculate daily excess returns
+E_ret                     <- SandP - riskfree
+par(mar = c(4, 4, 0.1, 0.1), cex.lab = 0.95, cex.axis = 0.9,
+    mgp = c(2, 0.7, 0), tcl = -0.3)
+plot(Date[2:length(Date)],E_ret, type='l',xlab="Date",ylab="Excess returns in %")
+@
+	\caption{\label{fig:E_ret} Excess returns of S\&P500.}
+\end{figure}%
+
+Figure~\ref{fig:E_ret} depicts the daily excess returns tha of S\&P500 in the stated time period. For visual inspection, we observe a mean of approximately zero, in fact it is \Sexpr{round(mean(E_ret),4)}, while the volatility varies significantly, especially during the financial crisis.
 
 \end{document}

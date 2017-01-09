@@ -18,7 +18,7 @@ library(tseries, quietly = T)
 library(forecast, quietly = T)
 
 ###
-# Read in data
+# Read in data and adjust for later analysis
 ###
 
 # first read given data and adjust
@@ -29,9 +29,22 @@ Date                      <- as.Date(data_given[,1])
 sum(1:length(which(!is.na(Date)))==which(!is.na(Date)))==length(which(!is.na(Date)))
 # truncate vectors to all values that we actually observed
 Date                      <- Date[1:length(which(!is.na(Date)))]
-SandP                     <- data_given[1:length(Date),2]
-riskfree                  <- data_given[1:length(Date),3]
-
+# calculate daily returns from S&P index in percent
+SandP                     <- (data_given[2:length(Date),2]/data_given[1:length(Date)-1,2]-1)*100
+# calculate daily riskfree rate from annulaized riskfree in percent, discard first observation
+riskfree                  <- data_given[2:length(Date),3]/365
+# sum(is.na(riskfree)) # some values in the risk free rate are NA
+# replace them with the last value that is not NA
+for(i in 1:length(riskfree)){
+  if(is.na(riskfree[i])==T){
+    riskfree[i]               <- riskfree[i-1]
+  }
+} 
+# calculate daily excess returns
+E_ret                     <- SandP - riskfree
+par(mar = c(4, 4, 0.1, 0.1), cex.lab = 0.95, cex.axis = 0.9,
+    mgp = c(2, 0.7, 0), tcl = -0.3)
+plot(Date[2:length(Date)],E_ret, type='l',xlab="Date",ylab="Excess returns in %")
 
 # 'skip' option to start reading from csv in later row
 
