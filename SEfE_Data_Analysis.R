@@ -53,7 +53,9 @@ plot(E_ret[,1], E_ret[,2], type='l',xlab="Date",ylab="Excess returns in %")
 Factors                   <- data.frame(Date)
 
 # read in first factor
-Factor_1                  <- read.csv(file="data/NASDAQCOM.csv", header=TRUE, sep=",",
+#Factor_1                  <- read.csv(file="data/NASDAQCOM.csv", header=TRUE, sep=",",
+#                                      na.strings =".", stringsAsFactors=FALSE)
+Factor_1                  <- read.csv(file="data/TEDRATE.csv", header=TRUE, sep=",",
                                       na.strings =".", stringsAsFactors=FALSE)
 Factor_1[,1]              <- as.Date(Factor_1[,1])
 # read in second factor
@@ -63,14 +65,21 @@ Factor_2[,1]              <- as.Date(Factor_2[,1])
 # add column with respective values of Factor_1 and Factor_2 (or arbitrary amount of factors)
 for(i in 1:nrow(Factors)){
   Factors[i,2]                  <- Factor_1[which(Date[i]==Factor_1[,1]),2]
-  Factors[i,3]                  <- Factor_2[which(Date[i]==Factor_2[,1]),2]  
+  Factors[i,3]                  <- (Factor_2[which(Date[i]==Factor_2[,1]),2]-Factor_2[which(Date[i]==Factor_2[,1])-1,2]
+                                    )/Factor_2[which(Date[i]==Factor_2[,1])-1,2]*100
+#  Factors[i,3]                  <- Factor_2[which(Date[i]==Factor_2[,1]),2]  
 }
-colnames(Factors)[2]      <- "NASDAQ"
+#colnames(Factors)[2]      <- "NASDAQ"
+colnames(Factors)[2]      <- "TED"
 colnames(Factors)[3]      <- "VIX"
 NrFact                    <- 2 # enter how many factors you included in the end
 
 # replace NAs with the last value that is not NA in all columns of data frame
 for(j in 2:ncol(Factors)){
+  # if first value is NA, take 0
+  if(is.na(Factors[1,j])==T){
+    Factors[1,j]               <- 0
+  }
   for(i in 1:nrow(Factors)){
     if(is.na(Factors[i,j])==T){
       Factors[i,j]               <- Factors[i-1,j]
@@ -142,39 +151,44 @@ fcast                   <- forecast(fit,
 plot(fcast)
 
 # rolling one-step-ahead forecast
-pred                    <- matrix(data=NA,nrow=189,ncol=1)
-benchmark               <- matrix(data=NA,nrow=189,ncol=1)
-actual                  <- matrix(data=NA,nrow=189,ncol=1)
-err_out                 <- matrix(data=NA,nrow=189,ncol=1)
+# create empty matrices
+pred                    <- matrix(data=NA,nrow=which(Factors[,1]=="2016-09-30")-which(Factors[,1]=="2015-12-30")-1,ncol=1)
+benchmark               <- matrix(data=NA,nrow=which(Factors[,1]=="2016-09-30")-which(Factors[,1]=="2015-12-30")-1,ncol=1)
+actual                  <- matrix(data=NA,nrow=which(Factors[,1]=="2016-09-30")-which(Factors[,1]=="2015-12-30")-1,ncol=1)
+err_out                 <- matrix(data=NA,nrow=which(Factors[,1]=="2016-09-30")-which(Factors[,1]=="2015-12-30")-1,ncol=1)
 
-# run for non-changing parameters
+# run for constant parameters
 start.time <- Sys.time()
-for(i in 1:(nrow(Factors)-nrow(Factors_in)-1)){
-  #  trend                   <- 1:(nrow(Factors_in)+i-1) # no trend used
-  #
-  reg_1                   <- Arima(Factors[2:(4025+i-1),2], xreg=cbind(#trend,
-    Factors[1:(4024+i-1),9],#), # test 9,3 
-    Factors[1:(4024+i-1),7],#),                               
-    Factors[1:(4024+i-1),10:13]),  
-    order=c(2,0,2)) # ARIMA(2,0,2)
-  #  reg_1                  <- arima(Factors[2:(4025+i-1),2], order=c(2,0,2)) # if no weekday
-  #  pred[i]                  <- predict(reg_1,n.ahead=1)$pred # only arma
-  #  
-  fcast                   <- forecast(reg_1,xreg=cbind(#1, # no trend 
-    Factors[(4024+i),9],#),# test 9,3
-    Factors[(4024+i),7],#),                              
-    Factors[(4024+i),10:13])
-    , h=1)
+for(i in 1:(which(Factors[,1]=="2016-09-30")-which(Factors[,1]=="2015-12-30")-1)){
+  # model estimation as above
+  reg_1                   <- Arima(#
+          E_ret[2:(which(E_ret[,1]=="2015-12-31")+i-1),2],
+          xreg = Factors[2:(which(Factors[,1]=="2015-12-30")+i-1),2:ncol(Factors)],
+          order = c(2,0,2)
+          )#  
+  # one-step-ahead forecast
+  fcast                   <- forecast(#
+          reg_1, xreg=#
+          Factors[which(Factors[,1]=="2015-12-30")+i,2:ncol(Factors)],
+          h=1)#
   # fill matrices
-  pred[i]                 <- fcast$mean # one-step ahead forecast using model incl optimal ARMA
-  benchmark[i]            <- mean(Factors[1:4025+i-1,2]) # mean of past series as benchmark
-  actual[i]               <- Factors[4025+i,2] # actual value
+  pred[i]                 <- fcast$mean # one-step ahead forecast
+  benchmark[i]            <- mean(E_ret[2:(which(E_ret[,1]=="2015-12-31")+i-1),2]) # mean of past series as benchmark
+  actual[i]               <- E_ret[which(E_ret[,1]=="2015-12-31")+i,2] # actual value
   err_out[i]              <- actual[i]-pred[i] # store the error
 }
 end.time <- Sys.time()
 end.time - start.time # how long did it run
+# head(cbind(actual,pred,benchmark))
+Rsq_os                     <- 1-(sum((actual-pred)^2)/sum((actual-benchmark)^2))
 
-
+# Plot forecasting performance vs actual and benchmark to further assess your performance
+plot(Date[which(Date=="2016-01-04"):length(Date)],actual,type="l",col="black",
+     xlab="Time",ylab="Predicted vs actual")
+lines(Date[which(Date=="2016-01-04"):length(Date)],pred,col="cornflowerblue")
+lines(Date[which(Date=="2016-01-04"):length(Date)],benchmark,col="red")
+legend("bottom",c("Actual","Forecast","Benchmark"),
+       lty=c(1,1,1),col=c("black","cornflowerblue","red"))
 
 #################### end fourth chunk
 
