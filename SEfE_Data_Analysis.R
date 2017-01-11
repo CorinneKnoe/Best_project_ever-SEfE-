@@ -48,6 +48,10 @@ plot(Date[2:length(Date)],E_ret, type='l',xlab="Date",ylab="Excess returns in %"
 
 # 'skip' option to start reading from csv in later row
 
+
+
+
+
 ###
 # End
 ###

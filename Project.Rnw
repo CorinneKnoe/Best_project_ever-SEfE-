@@ -89,6 +89,6 @@ plot(Date[2:length(Date)],E_ret, type='l',xlab="Date",ylab="Excess returns in %"
 	\caption{\label{fig:E_ret} Excess returns of S\&P500.}
 \end{figure}%
 
-Figure~\ref{fig:E_ret} depicts the daily excess returns tha of S\&P500 in the stated time period. For visual inspection, we observe a mean of approximately zero, in fact it is \Sexpr{round(mean(E_ret),4)}, while the volatility varies significantly, especially during the financial crisis.
+Figure~\ref{fig:E_ret} depicts the daily excess returns of the S\&P500 in the stated time period. For visual inspection, we observe a mean of approximately zero, in fact it is \Sexpr{round(mean(E_ret),4)}, while the volatility varies significantly, especially during the financial crisis.
 
 \end{document}
