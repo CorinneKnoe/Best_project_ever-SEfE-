@@ -184,11 +184,13 @@ library(forecast, quietly = T)
 # }
 
 # choose in-sample for model estimation
+Date_In_End               <- as.Date("2015-12-31") # last date of in-sample
+Date_In_End_1dbefore      <- as.Date("2015-12-30") # last date of explanatory var
 fit                       <- Arima(#
         # dependent var from 2nd observation to 31.12.2015
-        E_ret[2:which(E_ret[,1]=="2015-12-31"),2], 
+        E_ret[2:which(E_ret[,1]==Date_In_End),2], 
         # factors and dummies as explanatory variables
-        xreg = Factors[2:which(Factors[,1]=="2015-12-30"),2:ncol(Factors)],
+        xreg = Factors[2:which(Factors[,1]==Date_In_End_1dbefore),2:ncol(Factors)],
         # choose order of ARIMA(p,d,q) model you want to estimate
         order = c(2,0,2)
         )#
@@ -209,25 +211,25 @@ tsdisplay(arima.errors(fit)) # assess model errors
 \end{figure}
 %
 Utilizing a Box-Ljung test yields a p-value of \Sexpr{round(Box.test(residuals(fit),fitdf=3,lag=10,type="Ljung")$p.value,4)} which indicated that there is no more serial correlation in the errors on a 5\% level. Another indication for the goodness of the model is the fit-criterium $R^2$ which we calculate as
-\begin{equation}
+\begin{equation*}
   R^2 = \frac{\sum_i (\hat{y_i}-\bar{y})^2}{\sum_i (y_i-\bar{y})^2}= \Sexpr{round(
         1-sum((residuals(fit))^2)/
-        sum((E_ret[2:which(E_ret[,1]=="2015-12-31"),2]-
-        mean(E_ret[2:which(E_ret[,1]=="2015-12-31"),2]))^2),
+        sum((E_ret[2:which(E_ret[,1]==Date_In_End),2]-
+        mean(E_ret[2:which(E_ret[,1]==Date_In_End),2]))^2),
         4)}
-\end{equation}
+\end{equation*}
 which is the fraction of unexplained variation over the total variation. 
 
 \section{Forecasting Performance}
-Finally, we want to test our model for forecasting. For this purpose, we imagine ourselves standing in the end of December 2015 and make a h=\Sexpr{which(Factors[,1]=="2016-09-30")-which(Factors[,1]=="2015-12-30")-1}-step ahead forecast until the end of the third quarter of 2016 which is depicted in figure~\ref{fig:hstepFcast}.
+Finally, we want to test our model for forecasting. For this purpose, we imagine ourselves standing in the end of December 2015 and make a h=\Sexpr{which(Factors[,1]==Date_In_End_1dbefore)-which(Factors[,1]==Date_In_End_1dbefore)-1}-step ahead forecast until the end of the third quarter of 2016 which is depicted in figure~\ref{fig:hstepFcast}.
 %
 \begin{figure}[h]
 \begin{center}
 <<h-StepForecast, echo=FALSE, warning=FALSE, message=F, tidy=FALSE, fig.width=5, fig.height=5, out.width='0.7\\linewidth'>>=
 fcast                   <- forecast(fit,
                             xreg=
-                              Factors[2:which(Factors[,1]=="2015-12-30"),2:ncol(Factors)],
-                              h=which(Factors[,1]=="2016-09-30")-which(Factors[,1]=="2015-12-30")-1)
+                              Factors[2:which(Factors[,1]==Date_In_End_1dbefore),2:ncol(Factors)],
+                              h=which(Factors[,1]==Date_In_End_1dbefore)-which(Factors[,1]==Date_In_End)-1)
 plot(fcast)
 @
 \caption{h-step ahead forecasts from regression with ARIMA(2,0,2) errors.}
@@ -241,54 +243,57 @@ On top of that, we consider a rolling one-step-ahead forecast that we use for a 
 \begin{figure}[h]
 \begin{center}
 <<one-StepForecast, echo=FALSE, warning=FALSE, message=F, tidy=FALSE, fig.width=5, fig.height=5, out.width='0.7\\linewidth'>>=
-# rolling one-step-ahead forecast
-# create empty matrices
-pred                    <- matrix(data=NA,nrow=which(Factors[,1]=="2016-09-30")-which(Factors[,1]=="2015-12-30")-1,ncol=1)
-benchmark               <- matrix(data=NA,nrow=which(Factors[,1]=="2016-09-30")-which(Factors[,1]=="2015-12-30")-1,ncol=1)
-actual                  <- matrix(data=NA,nrow=which(Factors[,1]=="2016-09-30")-which(Factors[,1]=="2015-12-30")-1,ncol=1)
-err_out                 <- matrix(data=NA,nrow=which(Factors[,1]=="2016-09-30")-which(Factors[,1]=="2015-12-30")-1,ncol=1)
+  # rolling one-step-ahead forecast
+  # create empty matrices
+  pred                    <- matrix(data=NA,nrow=which(Factors[,1]==Date[length(Date)]
+  )-which(Factors[,1]==Date_In_End_1dbefore)-1,ncol=1)
+benchmark               <- matrix(data=NA,nrow=which(Factors[,1]==Date[length(Date)]
+)-which(Factors[,1]==Date_In_End_1dbefore)-1,ncol=1)
+actual                  <- matrix(data=NA,nrow=which(Factors[,1]==Date[length(Date)]
+)-which(Factors[,1]==Date_In_End_1dbefore)-1,ncol=1)
+err_out                 <- matrix(data=NA,nrow=which(Factors[,1]==Date[length(Date)]
+)-which(Factors[,1]==Date_In_End_1dbefore)-1,ncol=1)
 
 # run for constant parameters
-start.time <- Sys.time()
-for(i in 1:(which(Factors[,1]=="2016-09-30")-which(Factors[,1]=="2015-12-30")-1)){
+for(i in 1:(which(Factors[,1]==Date[length(Date)]
+)-which(Factors[,1]==Date_In_End_1dbefore)-1)){
   # model estimation as above
   reg_1                   <- Arima(#
-          E_ret[2:(which(E_ret[,1]=="2015-12-31")+i-1),2],
-          xreg = Factors[2:(which(Factors[,1]=="2015-12-30")+i-1),2:ncol(Factors)],
-          order = c(2,0,2)
-          )#  
+    E_ret[2:(which(E_ret[,1]==Date_In_End)+i-1),2],
+    xreg = Factors[2:(which(Factors[,1]==Date_In_End_1dbefore)+i-1),2:ncol(Factors)],
+    order = c(2,0,2)
+  )#  
   # one-step-ahead forecast
   fcast                   <- forecast(#
-          reg_1, xreg=#
-          Factors[which(Factors[,1]=="2015-12-30")+i,2:ncol(Factors)],
-          h=1)#
+    reg_1, xreg=#
+      Factors[which(Factors[,1]==Date_In_End_1dbefore)+i,2:ncol(Factors)],
+    h=1)#
   # fill matrices
   pred[i]                 <- fcast$mean # one-step ahead forecast
-  benchmark[i]            <- mean(E_ret[2:(which(E_ret[,1]=="2015-12-31")+i-1),2]) # mean of past series as benchmark
-  actual[i]               <- E_ret[which(E_ret[,1]=="2015-12-31")+i,2] # actual value
+  benchmark[i]            <- mean(E_ret[2:(which(E_ret[,1]==Date_In_End)+i-1),2]) # mean of past series as benchmark
+  actual[i]               <- E_ret[which(E_ret[,1]==Date_In_End)+i,2] # actual value
   err_out[i]              <- actual[i]-pred[i] # store the error
 }
 
 # Plot forecasting performance vs actual and benchmark to further assess your performance
-plot(Date[which(Date=="2016-01-04"):length(Date)],actual,type="l",col="black",
+plot(Date[(which(Date==Date_In_End)+1):length(Date)],actual,type="l",col="black",
      xlab="Time",ylab="Predicted vs actual")
-lines(Date[which(Date=="2016-01-04"):length(Date)],pred,col="cornflowerblue")
-lines(Date[which(Date=="2016-01-04"):length(Date)],benchmark,col="red")
+lines(Date[(which(Date==Date_In_End)+1):length(Date)],pred,col="cornflowerblue")
+lines(Date[(which(Date==Date_In_End)+1):length(Date)],benchmark,col="red")
 legend("bottom",c("Actual","Forecast","Benchmark"),
        lty=c(1,1,1),col=c("black","cornflowerblue","red"))
-
 @
-\caption{One-step-ahead rolling forecasts from regression with ARIMA(2,0,2) errors.}
+  \caption{One-step-ahead rolling forecasts from regression with ARIMA(2,0,2) errors.}
 \label{fig:1stepFcast}
 \end{center}
 \end{figure}
 %
 
 Figure~\ref{fig:1stepFcast} shows the development of the excess returns during the out-sample as well as the forecast and the benchmark we utilize. Visual inpection does not give an indication which of both gives the more accurate prediction, the out-of-sample forecast performance criterium, however, calculated as
-\begin{equation}
-  R^2_{OS}=1-\frac{\sum_i (y_i-\hat{y_}{model})^2}{\sum_i (y_i-\hat{y_}{benchmark})^2}=
+\begin{equation*}
+  R^2_{OS}=1-\frac{\sum_i (y_i-\hat{y}_{model})^2}{\sum_i (y_i-\hat{y}_{benchmark})^2}=
           \Sexpr{round(1-(sum((actual-pred)^2)/sum((actual-benchmark)^2)),4)}
-\end{equation}
+\end{equation*}
 proves that our model outperforms the benchmark slightly. 
 
 \section{Conclusion}

@@ -120,11 +120,13 @@ library(forecast, quietly = T)
 # }
 
 # choose in-sample for model estimation
+Date_In_End               <- as.Date("2015-12-31") # last date of in-sample
+Date_In_End_1dbefore      <- as.Date("2015-12-30") # last date of explanatory var
 fit                       <- Arima(#
         # dependent var from 2nd observation to 31.12.2015
-        E_ret[2:which(E_ret[,1]=="2015-12-31"),2], 
+        E_ret[2:which(E_ret[,1]==Date_In_End),2], 
         # factors and dummies as explanatory variables
-        xreg = Factors[2:which(Factors[,1]=="2015-12-30"),2:ncol(Factors)],
+        xreg = Factors[2:which(Factors[,1]==Date_In_End_1dbefore),2:ncol(Factors)],
         # choose order of ARIMA(p,d,q) model you want to estimate
         order = c(2,0,2)
         )#
@@ -134,8 +136,8 @@ tsdisplay(arima.errors(fit), main="ARIMA(2,0,2) errors") # assess model errors
 Box.test(residuals(fit),fitdf=3,lag=10,type="Ljung") # check for serial correlation in errors
 # in-sample R^2
 R_sq                    <- 1-sum((residuals(fit))^2)/
-        sum((E_ret[2:which(E_ret[,1]=="2015-12-31"),2]-
-        mean(E_ret[2:which(E_ret[,1]=="2015-12-31"),2]))^2)
+        sum((E_ret[2:which(E_ret[,1]==Date_In_End),2]-
+        mean(E_ret[2:which(E_ret[,1]==Date_In_End),2]))^2)
 
 #################### end third chunk
 
@@ -146,35 +148,40 @@ R_sq                    <- 1-sum((residuals(fit))^2)/
 # h step ahead forecast
 fcast                   <- forecast(fit,
                             xreg=
-                              Factors[2:which(Factors[,1]=="2015-12-30"),2:ncol(Factors)],
-                              h=which(Factors[,1]=="2016-09-30")-which(Factors[,1]=="2015-12-30")-1)
+                              Factors[2:which(Factors[,1]==Date_In_End_1dbefore),2:ncol(Factors)],
+                              h=which(Factors[,1]==Date_In_End_1dbefore)-which(Factors[,1]==Date_In_End)-1)
 plot(fcast)
 
 # rolling one-step-ahead forecast
 # create empty matrices
-pred                    <- matrix(data=NA,nrow=which(Factors[,1]=="2016-09-30")-which(Factors[,1]=="2015-12-30")-1,ncol=1)
-benchmark               <- matrix(data=NA,nrow=which(Factors[,1]=="2016-09-30")-which(Factors[,1]=="2015-12-30")-1,ncol=1)
-actual                  <- matrix(data=NA,nrow=which(Factors[,1]=="2016-09-30")-which(Factors[,1]=="2015-12-30")-1,ncol=1)
-err_out                 <- matrix(data=NA,nrow=which(Factors[,1]=="2016-09-30")-which(Factors[,1]=="2015-12-30")-1,ncol=1)
+pred                    <- matrix(data=NA,nrow=which(Factors[,1]==Date[length(Date)]
+)-which(Factors[,1]==Date_In_End_1dbefore)-1,ncol=1)
+benchmark               <- matrix(data=NA,nrow=which(Factors[,1]==Date[length(Date)]
+)-which(Factors[,1]==Date_In_End_1dbefore)-1,ncol=1)
+actual                  <- matrix(data=NA,nrow=which(Factors[,1]==Date[length(Date)]
+)-which(Factors[,1]==Date_In_End_1dbefore)-1,ncol=1)
+err_out                 <- matrix(data=NA,nrow=which(Factors[,1]==Date[length(Date)]
+)-which(Factors[,1]==Date_In_End_1dbefore)-1,ncol=1)
 
 # run for constant parameters
 start.time <- Sys.time()
-for(i in 1:(which(Factors[,1]=="2016-09-30")-which(Factors[,1]=="2015-12-30")-1)){
+for(i in 1:(which(Factors[,1]==Date[length(Date)]
+)-which(Factors[,1]==Date_In_End_1dbefore)-1)){
   # model estimation as above
   reg_1                   <- Arima(#
-          E_ret[2:(which(E_ret[,1]=="2015-12-31")+i-1),2],
-          xreg = Factors[2:(which(Factors[,1]=="2015-12-30")+i-1),2:ncol(Factors)],
+          E_ret[2:(which(E_ret[,1]==Date_In_End)+i-1),2],
+          xreg = Factors[2:(which(Factors[,1]==Date_In_End_1dbefore)+i-1),2:ncol(Factors)],
           order = c(2,0,2)
           )#  
   # one-step-ahead forecast
   fcast                   <- forecast(#
           reg_1, xreg=#
-          Factors[which(Factors[,1]=="2015-12-30")+i,2:ncol(Factors)],
+          Factors[which(Factors[,1]==Date_In_End_1dbefore)+i,2:ncol(Factors)],
           h=1)#
   # fill matrices
   pred[i]                 <- fcast$mean # one-step ahead forecast
-  benchmark[i]            <- mean(E_ret[2:(which(E_ret[,1]=="2015-12-31")+i-1),2]) # mean of past series as benchmark
-  actual[i]               <- E_ret[which(E_ret[,1]=="2015-12-31")+i,2] # actual value
+  benchmark[i]            <- mean(E_ret[2:(which(E_ret[,1]==Date_In_End)+i-1),2]) # mean of past series as benchmark
+  actual[i]               <- E_ret[which(E_ret[,1]==Date_In_End)+i,2] # actual value
   err_out[i]              <- actual[i]-pred[i] # store the error
 }
 end.time <- Sys.time()
@@ -183,10 +190,10 @@ end.time - start.time # how long did it run
 Rsq_os                     <- 1-(sum((actual-pred)^2)/sum((actual-benchmark)^2))
 
 # Plot forecasting performance vs actual and benchmark to further assess your performance
-plot(Date[which(Date=="2016-01-04"):length(Date)],actual,type="l",col="black",
+plot(Date[(which(Date==Date_In_End)+1):length(Date)],actual,type="l",col="black",
      xlab="Time",ylab="Predicted vs actual")
-lines(Date[which(Date=="2016-01-04"):length(Date)],pred,col="cornflowerblue")
-lines(Date[which(Date=="2016-01-04"):length(Date)],benchmark,col="red")
+lines(Date[(which(Date==Date_In_End)+1):length(Date)],pred,col="cornflowerblue")
+lines(Date[(which(Date==Date_In_End)+1):length(Date)],benchmark,col="red")
 legend("bottom",c("Actual","Forecast","Benchmark"),
        lty=c(1,1,1),col=c("black","cornflowerblue","red"))
 
