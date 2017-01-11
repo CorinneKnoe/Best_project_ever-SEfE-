@@ -41,10 +41,11 @@ for(i in 1:length(riskfree)){
   }
 } 
 # calculate daily excess returns
-E_ret                     <- SandP - riskfree
+E_ret                     <- data.frame(Date[2:length(Date)],SandP - riskfree)
+colnames(E_ret)           <- c("Date", "E_ret")
 par(mar = c(4, 4, 0.1, 0.1), cex.lab = 0.95, cex.axis = 0.9,
     mgp = c(2, 0.7, 0), tcl = -0.3)
-plot(Date[2:length(Date)], E_ret, type='l',xlab="Date",ylab="Excess returns in %")
+plot(E_ret[,1], E_ret[,2], type='l',xlab="Date",ylab="Excess returns in %")
 
 #################### end first chunk
 
@@ -66,6 +67,7 @@ for(i in 1:nrow(Factors)){
 }
 colnames(Factors)[2]      <- "NASDAQ"
 colnames(Factors)[3]      <- "VIX"
+NrFact                    <- 2 # enter how many factors you included in the end
 
 # replace NAs with the last value that is not NA in all columns of data frame
 for(j in 2:ncol(Factors)){
@@ -78,13 +80,62 @@ for(j in 2:ncol(Factors)){
 
 summary(Factors)
 
+# add day-of-the-week dummies for Tuesday-Friday (Monday being the intercept)
+# if running system is English, change names in vector
+DayDummies                <- c("Dienstag","Mittwoch","Donnerstag","Freitag")
+for(d in 1:length(DayDummies)){
+  for(i in 1:nrow(Factors)){
+    if(weekdays(Factors[i,1])==DayDummies[d]){
+      Factors[i,NrFact+1+d]                  <- 1
+    }
+    else {
+      Factors[i,NrFact+1+d]                  <- 0
+    }
+  }
+}
+colnames(Factors)[(1+NrFact+1):(
+  1+NrFact+length(DayDummies))]      <- c("Tue","Wed","Thu","Fri")
+
 #################### end second chunk
+
 
 ###
 # Model
 ###
+library(forecast, quietly = T)
 
-# choose in-sample
+# are the series stationary?
+# adf.test(E_ret[,2]) # E_ret is
+# for(i in 2:ncol(Factors)){
+#   adf.test(Factors[,i]) # Factors are as well
+# }
+
+# choose in-sample for model estimation
+fit                       <- Arima(#
+        # dependent var from 2nd observation to 31.12.2015
+        E_ret[2:which(E_ret[,1]=="2015-12-31"),2], 
+        # factors and dummies as explanatory variables
+        xreg = Factors[2:which(Factors[,1]=="2015-12-30"),2:ncol(Factors)],
+        # choose order of ARIMA(p,d,q) model you want to estimate
+        order = c(2,0,2)
+        )#
+summary(fit)
+err_in                  <- resid(fit) # store the model residuals
+tsdisplay(arima.errors(fit), main="ARIMA(2,0,2) errors") # assess model errors
+Box.test(residuals(fit),fitdf=3,lag=10,type="Ljung") # check for serial correlation in errors
+# in-sample R^2
+R_sq                    <- 1-sum((residuals(fit))^2)/
+        sum((E_ret[2:which(E_ret[,1]=="2015-12-31"),2]-
+        mean(E_ret[2:which(E_ret[,1]=="2015-12-31"),2]))^2)
+
+#################### end third chunk
+
+# h step ahead forecast
+fcast                   <- forecast(fit,
+                            xreg=
+                              Factors[2:which(Factors[,1]=="2015-12-30"),2:ncol(Factors)],
+                              h=which(Factors[,1]=="2016-09-30")-which(Factors[,1]=="2015-12-30")-1)
+plot(fcast)
 
 
 

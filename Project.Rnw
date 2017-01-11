@@ -95,19 +95,19 @@ for(i in 1:length(riskfree)){
   }
 } 
 # calculate daily excess returns
-E_ret                     <- SandP - riskfree
+E_ret                     <- data.frame(Date[2:length(Date)],SandP - riskfree)
+colnames(E_ret)           <- c("Date", "E_ret")
 par(mar = c(4, 4, 0.1, 0.1), cex.lab = 0.95, cex.axis = 0.9,
     mgp = c(2, 0.7, 0), tcl = -0.3)
-plot(Date[2:length(Date)], E_ret, type='l',xlab="Date",ylab="Excess returns in %")
+plot(E_ret[,1], E_ret[,2], type='l',xlab="Date",ylab="Excess returns in %")
 @
 	\caption{\label{fig:E_ret} Excess returns of S\&P500.}
 \end{figure}%
 
-Figure~\ref{fig:E_ret} depicts the daily excess returns of the S\&P500 in the stated time period. For visual inspection, we observe a mean of approximately zero, in fact it is \Sexpr{round(mean(E_ret),4)}, while the volatility varies significantly, especially during the financial crisis.
+Figure~\ref{fig:E_ret} depicts the daily excess returns of the S\&P500 in the stated time period. For visual inspection, we observe a mean of approximately zero, in fact it is \Sexpr{round(mean(E_ret[,2]),4)}, while the volatility varies significantly, especially during the financial crisis.
 
-In a next step, we set up a data frame of the exogenous factors we want to use to predict the excess returns. Since the origin of the factors is different from the endogenous variables, we use the initial dates of the excess returns and limit our values for the factors to those with a corresponding date. This serves on the one hand to discard all obersavtions outside the relevant period and furthermore to adjust for differences in trading days on different stock exchanges as well as coherency in general. The first factor used it the \textsc{Nasdaq} index, the second the \textsc{Vix}. The reason for including these particular factors is that the S\&P500 consists of a high number of companies that are listed in the \textsc{Nasdaq} and the latter thus has some predictive power for the former. The volatility index \textsc{Vix} inherits predictive power as well as it gives indications about uncertainty in the market environment. Table~\ref{tab:SumStatsFact} displays descriptive statistics of both factors.
+In a next step, we set up a data frame of the exogenous factors we want to use to predict the excess returns. Since the origin of the factors is different from the endogenous variables, we use the initial dates of the excess returns and limit our values for the factors to those with a corresponding date. This serves on the one hand to discard all obersavtions outside the relevant period and furthermore to adjust for differences in trading days on different stock exchanges as well as coherency in general. The first factor used it the \textsc{Nasdaq} index, the second the \textsc{Vix}. The reason for including these particular factors is that the S\&P500 consists of a high number of companies that are listed in the \textsc{Nasdaq} and the latter thus has some predictive power for the former. The volatility index \textsc{Vix} inherits predictive power as well as it gives indications about uncertainty in the market environment. Table~\ref{tab:SumStatsFact} displays descriptive statistics of both factors. On top of that, we include dummy variables for Tuesday, Wednesday, Thursday and Friday. Monday can be ignored since it is our default day and hence estimated as the intercept. 
 %
-% \caption{\label{tab:SumStatsFact}Summary statistics of the two factors used for predicting excess returns.}
 <<Factors, echo=FALSE, warning=FALSE, results="asis">>=
 
 # create data frame of factors
@@ -128,6 +128,7 @@ for(i in 1:nrow(Factors)){
 }
 colnames(Factors)[2]      <- "NASDAQ"
 colnames(Factors)[3]      <- "VIX"
+NrFact                    <- 2 # enter how many factors you included in the end
 
 # replace NAs with the last value that is not NA in all columns of data frame
 for(j in 2:ncol(Factors)){
@@ -138,16 +139,94 @@ for(j in 2:ncol(Factors)){
   } 
 }
 library(xtable)
-print(xtable(summary(Factors), caption="Summary statistics of the factors used for predicting excess returns.", label = "tab:SumStatsFact"), booktabs=TRUE, tabular.environment='longtable', caption.placement="top")
+print(xtable(summary(Factors), caption="Summary statistics of the factors used for predicting excess returns.", label = "tab:SumStatsFact"), booktabs=TRUE, caption.placement="top")
+
+# add day-of-the-week dummies for Tuesday-Friday (Monday being the intercept)
+# if running system is English, change names in vector
+DayDummies                <- c("Dienstag","Mittwoch","Donnerstag","Freitag")
+for(d in 1:length(DayDummies)){
+  for(i in 1:nrow(Factors)){
+    if(weekdays(Factors[i,1])==DayDummies[d]){
+      Factors[i,NrFact+1+d]                  <- 1
+    }
+    else {
+      Factors[i,NrFact+1+d]                  <- 0
+    }
+  }
+}
+colnames(Factors)[(1+NrFact+1):(
+  1+NrFact+length(DayDummies))]      <- c("Tue","Wed","Thu","Fri")
 @
 
 \section{Model}
 
 Now that we have the explanatory variable as well as factors we want to use for prediction, we divide the sample into an in-sample for estimation and out-of-sample for evaluating the forecasting performance. As our first observation of the S\%P500 is \Sexpr{Date[1]}, the first observation that we can use for prediction is from \Sexpr{Date[2]}. We thus choose to use the sample from January 2000 until December 2015 as our in-sample and the remaning obervations to test the forecasting performance of the model. Since we use the factors to predict one day ahead, we use those starting from \Sexpr{Date[2]} and as dependent variable the one-day return of the S\&P500 one day later, i.e. \Sexpr{Date[3]}. 
+%
+<<Model, echo=FALSE, warning=FALSE, message=F, results="asis">>=
+###
+# Model
+###
+library(forecast, quietly = T)
 
+# are the series stationary?
+# adf.test(E_ret[,2]) # E_ret is
+# for(i in 2:ncol(Factors)){
+#   adf.test(Factors[,i]) # Factors are as well
+# }
 
+# choose in-sample for model estimation
+fit                       <- Arima(#
+        # dependent var from 2nd observation to 31.12.2015
+        E_ret[2:which(E_ret[,1]=="2015-12-31"),2], 
+        # factors and dummies as explanatory variables
+        xreg = Factors[2:which(Factors[,1]=="2015-12-30"),2:ncol(Factors)],
+        # choose order of ARIMA(p,d,q) model you want to estimate
+        order = c(2,0,2)
+        )#
+# summary(fit)
+err_in                  <- resid(fit) # store the model residuals
+@
+
+We fit a model to the in-sample using the factors described above as well as autoregressive and moving average components which gives us an ARIMA(2,0,2) model. Visualy inspecting the errors of our model indicates that there is barely no scope for improving the explanatory power of the model as can be seen in figure~\ref{fig:ErrorPlot}.
+%
+\begin{figure}[h]
+\begin{center}
+<<ErrorPlot, echo=FALSE, warning=FALSE, message=F, tidy=FALSE, fig.width=5, fig.height=5, out.width='0.7\\linewidth'>>=
+tsdisplay(arima.errors(fit)) # assess model errors
+@
+\caption{ARIMA(2,0,2) errors and its serial correlation.}
+\label{fig:ErrorPlot}
+\end{center}
+\end{figure}
+%
+Utilizing a Box-Ljung test yields a p-value of \Sexpr{round(Box.test(residuals(fit),fitdf=3,lag=10,type="Ljung")$p.value,4)} which indicated that there is no more serial correlation in the errors on a 5\% level. Another indication for the goodness of the model is the fit-criterium $R^2$ which we calculate as
+\begin{equation}
+  R^2 = \frac{\sum_i (\hat{y_i}-\bar{y})^2}{\sum_i (y_i-\bar{y})^2}= \Sexpr{round(
+        1-sum((residuals(fit))^2)/
+        sum((E_ret[2:which(E_ret[,1]=="2015-12-31"),2]-
+        mean(E_ret[2:which(E_ret[,1]=="2015-12-31"),2]))^2),
+        4)}
+\end{equation}
+which is the fraction of unexplained variation over the total variation. 
 
 \section{Forecasting Performance}
+Finally, we want to test our model for forecasting. For this purpose, we imagine ourselves standing in the end of December 2015 and make a h=\Sexpr{which(Factors[,1]=="2016-09-30")-which(Factors[,1]=="2015-12-30")-1}-step ahead forecast until the end of the third quarter of 2016 which is depicted in figure~\ref{fig:hstepFcast}
+%
+\begin{figure}[h]
+\begin{center}
+<<h-StepForecast, echo=FALSE, warning=FALSE, message=F, tidy=FALSE, fig.width=5, fig.height=5, out.width='0.7\\linewidth'>>=
+fcast                   <- forecast(fit,
+                            xreg=
+                              Factors[2:which(Factors[,1]=="2015-12-30"),2:ncol(Factors)],
+                              h=which(Factors[,1]=="2016-09-30")-which(Factors[,1]=="2015-12-30")-1)
+plot(fcast)
+@
+\caption{h-step aheat forecasts from regression with ARIMA(2,0,2) errors.}
+\label{fig:hstepFcast}
+\end{center}
+\end{figure}
+%
+
 
 \section{Conclusion}
 
