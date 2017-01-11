@@ -297,6 +297,6 @@ Figure~\ref{fig:1stepFcast} shows the development of the excess returns during t
 proves that our model outperforms the benchmark slightly. 
 
 \section{Conclusion}
-
+As we have shown, the historical average of excess returns can be outperformed in our sample by rather basic econometric models and using publicly available data. Of course, there is still a magnitude of possible factors that could be included into the model but these are out of the scope of this analysis and are left for future research. 
 
 \end{document}
