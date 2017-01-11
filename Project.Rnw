@@ -227,6 +227,10 @@ plot(fcast)
 \end{figure}
 %
 
+On top of that, we consider a rolling one-step-ahead forecast that we use for a final evaluation of our model. This means that we take all information available at the first day of our out-sample and predict the excess return of the next day, then use the information available to that day and so on until we reach the end of our out-sample. At each point in time we evaluate our prediction by comparing it to the actual value on that day. The final evaluation of the model is done by calculating the out-of-sample $R^2$ for which we use as benchmark the mean of the series up to the day at which we are forecasting.
+
+
+
 
 \section{Conclusion}
 

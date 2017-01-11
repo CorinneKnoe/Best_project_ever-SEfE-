@@ -130,6 +130,10 @@ R_sq                    <- 1-sum((residuals(fit))^2)/
 
 #################### end third chunk
 
+###
+# Prediction
+###
+
 # h step ahead forecast
 fcast                   <- forecast(fit,
                             xreg=
@@ -137,6 +141,42 @@ fcast                   <- forecast(fit,
                               h=which(Factors[,1]=="2016-09-30")-which(Factors[,1]=="2015-12-30")-1)
 plot(fcast)
 
+# rolling one-step-ahead forecast
+pred                    <- matrix(data=NA,nrow=189,ncol=1)
+benchmark               <- matrix(data=NA,nrow=189,ncol=1)
+actual                  <- matrix(data=NA,nrow=189,ncol=1)
+err_out                 <- matrix(data=NA,nrow=189,ncol=1)
+
+# run for non-changing parameters
+start.time <- Sys.time()
+for(i in 1:(nrow(Factors)-nrow(Factors_in)-1)){
+  #  trend                   <- 1:(nrow(Factors_in)+i-1) # no trend used
+  #
+  reg_1                   <- Arima(Factors[2:(4025+i-1),2], xreg=cbind(#trend,
+    Factors[1:(4024+i-1),9],#), # test 9,3 
+    Factors[1:(4024+i-1),7],#),                               
+    Factors[1:(4024+i-1),10:13]),  
+    order=c(2,0,2)) # ARIMA(2,0,2)
+  #  reg_1                  <- arima(Factors[2:(4025+i-1),2], order=c(2,0,2)) # if no weekday
+  #  pred[i]                  <- predict(reg_1,n.ahead=1)$pred # only arma
+  #  
+  fcast                   <- forecast(reg_1,xreg=cbind(#1, # no trend 
+    Factors[(4024+i),9],#),# test 9,3
+    Factors[(4024+i),7],#),                              
+    Factors[(4024+i),10:13])
+    , h=1)
+  # fill matrices
+  pred[i]                 <- fcast$mean # one-step ahead forecast using model incl optimal ARMA
+  benchmark[i]            <- mean(Factors[1:4025+i-1,2]) # mean of past series as benchmark
+  actual[i]               <- Factors[4025+i,2] # actual value
+  err_out[i]              <- actual[i]-pred[i] # store the error
+}
+end.time <- Sys.time()
+end.time - start.time # how long did it run
+
+
+
+#################### end fourth chunk
 
 
 ###
