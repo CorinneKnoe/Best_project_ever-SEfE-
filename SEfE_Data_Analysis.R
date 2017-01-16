@@ -205,12 +205,5 @@ legend("bottom",c("Actual","Forecast","Benchmark"),
 ###
 
 # Discard data before and after period of interest
-Factor_1                  <- Factor_1[which(Factor_1[,1]==Date[1]):
-                                        which(Factor_1[,1]==Date[length(Date)]),]
-
-# replace NAs with the last value that is not NA in all columns of data frame
-for(i in 1:nrow(Factor_1)){
-  if(is.na(Factor_1[i,2])==T){
-    Factor_1[i,2]               <- Factor_1[i-1,2]
-  }
-} 
+#Factor_1                  <- Factor_1[which(Factor_1[,1]==Date[1]):
+#                                        which(Factor_1[,1]==Date[length(Date)]),]
