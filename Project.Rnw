@@ -10,6 +10,7 @@
 \usepackage{times}
 \usepackage{amssymb}
 \usepackage{amsmath}
+\usepackage[english]{varioref}
 \usepackage[hidelinks,bookmarksnumbered]{hyperref}
 \usepackage{latexsym}
 \usepackage{stmaryrd}
@@ -17,24 +18,67 @@
 \usepackage{booktabs}
 \usepackage{longtable}
 
+\usepackage{setspace}
+\onehalfspacing
+
+% Literature
+\usepackage[backend=bibtex,style=authoryear-icomp, dashed=false]{biblatex}
+\bibliography{Literature}
+
+% Page Numbers
+\newcounter{PagenrStorage}
+
+
 %%
 % Document
 %%
 \begin{document} 
 
-\author{Corinne Kn\"opfel and Manuel von Krosigk}
+%%
+% Titlepage
+%%
 
-\title{Forecasting excess returns of S\&P 500 using ARIMA models}
+\begin{center} 
+  \includegraphics[scale=.03]{UniSG_Logo}\\[.4cm]
+	
+	\begin{large}
+		\textbf{HS16-7,610,1.00 Software Engineering for Economists}\\[.4cm]
+	\end{large}
+	
+	University of St. Gallen\\
+	\today \\[.4cm]
+	
+	\rule{\textwidth}{1.5pt}\\
+	\vspace{.2cm}
+	\textbf{\large Forecasting excess returns of S\&P 500 using ARIMA models}
+	\rule{\textwidth}{1.5pt}\\[9.0cm]
+\end{center}	
+  \vspace{0.4cm}
+  \rule{\textwidth}{1pt}\\
+  \textbf{Authors:}
+    Corinne Kn\"opfel (\dots)
+    Manuel von Krosigk (16-620-452)\\
+  \textbf{Keywords:} ARMA, Capital Market Efficiency , Excess returns, Forecasting\\
+\thispagestyle{empty}
+\newpage
 
-\date{\today}
+%%
+% Contents
+%%
+\pagenumbering{Roman}
+%\renewcommand{\baselinestretch}{1.08}\normalsize % make font smaller
+\tableofcontents
+%\renewcommand{\baselinestretch}{1.0}\onehalfspacing
+\listoffigures  \addcontentsline{toc}{section}{List of Figures} 
+\listoftables \addcontentsline{toc}{section}{List of Tables}
 
-\maketitle
-
-\titlepage
+\newpage
+\setcounter{PagenrStorage}{\value{page}}
 
 %%
 % Body
 %%
+\pagenumbering{arabic}
 
 % Source: https://gist.github.com/pschmied/9691642
 % Source: http://kbroman.org/knitr_knutshell/pages/figs_tables.html
@@ -56,9 +100,9 @@ options(replace.assign=TRUE,width=90)
 
 \section{Introduction}
 
-Whether it is possible to forecast excess returns is one of the key indicators for the efficiency of capital markets. Particularly in times of automated high frequency trading, it should not be possible to being able to generate a consistently positive return, using only historical information. 
+Whether it is possible to forecast excess returns is one of the key indicators for the efficiency of capital markets. Particularly in times of automated high frequency trading, it should not be possible to being able to generate a consistently positive return, using only historical information on a daily basis. Previous research has extensively been trying to answer the question as has been described in \textcite{Campbell.2008} where the author tests whether it is possible to outperform the historical average in terms of predictive power. 
 
-Since homogenous expectations and further efficiency criteria are minimal requirements for the most popular financial models, such as Fama's and French's Capital Asset Pricing Model, we aspire to determine whether it is possible to outperform the market on a daily basis using only publicly available data and standard econometric tool which we assume to be common knowledge within the investing society.
+Since homogenous expectations and further efficiency criteria are minimal requirements for the most popular financial models, such as Fama's and French's Capital Asset Pricing Model \parencite{Fama.1993}, we aspire to determine whether it is possible to outperform the market on a daily basis using only publicly available data and standard econometric tool which we assume to be common knowledge within the investing society.
 
 \section{Data}
 
@@ -198,7 +242,7 @@ fit                       <- Arima(#
 err_in                  <- resid(fit) # store the model residuals
 @
 
-We fit a model to the in-sample using the factors described above as well as autoregressive and moving average components which gives us an ARIMA(2,0,2) model. Visualy inspecting the errors of our model indicates that there is barely no scope for improving the explanatory power of the model as can be seen in figure~\ref{fig:ErrorPlot}.
+We fit a model to the in-sample using the factors described above as well as autoregressive and moving average components which gives us an ARIMA(2,0,2) model following a selection procedure proposed in \textcite{Hyndman.2014} in combination with \textcite{Kleiber.2008}. Visualy inspecting the errors of our model indicates that there is barely no scope for improving the explanatory power of the model as can be seen in figure~\ref{fig:ErrorPlot}.
 %
 \begin{figure}[h]
 \begin{center}
@@ -298,5 +342,15 @@ proves that our model outperforms the benchmark slightly.
 
 \section{Conclusion}
 As we have shown, the historical average of excess returns can be outperformed in our sample by rather basic econometric models and using publicly available data. Of course, there is still a magnitude of possible factors that could be included into the model but these are out of the scope of this analysis and are left for future research. 
+
+%%
+% References
+%%
+\clearpage
+\pagenumbering{Roman}
+\setcounter{page}{\thePagenrStorage}
+\addcontentsline{toc}{section}{Bibliography}
+%\newpage
+\printbibliography 
 
 \end{document}
