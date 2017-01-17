@@ -1,5 +1,5 @@
 ##############################################
-#######    Knoepfel, Krosigk - SEfE    #######
+#######    Knoepfel, Krosigk - SEfE    ####### only to try out some commands, main analysis in .Rnw file
 ##############################################
 
 ##########
